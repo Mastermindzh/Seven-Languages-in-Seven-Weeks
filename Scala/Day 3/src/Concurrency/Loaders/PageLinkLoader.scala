@@ -9,9 +9,9 @@ object PageLinkLoader {
 
   def getLinks(url: String) : Int = {
     val content = Source.fromURL(url)(io.Codec("ISO-8859-1")).mkString
-    val test = hrefRegex.findAllIn(content).matchData.toList.map(_.group(2))
+    val links = hrefRegex.findAllIn(content).matchData.toList.map(_.group(2))
 
-    test.size
+    links.size
   }
 
 }
