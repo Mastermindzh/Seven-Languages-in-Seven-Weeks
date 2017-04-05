@@ -1,7 +1,6 @@
 import java.io.{File, PrintWriter}
 
 import scala.collection.immutable.ListMap
-import scala.collection.mutable.ListBuffer
 import scala.io.Source
 
 object PageLinkLoader {
@@ -30,7 +29,7 @@ object PageLinkLoader {
     )
 
     // create new mutable list and fill with visited
-    val newVisited = scala.collection.mutable.ListBuffer.empty[String]
+    var newVisited = scala.collection.mutable.ListBuffer.empty[String]
     newVisited ++= visited.filter(p => !p.equals(url))
 
     //add to newVisited
@@ -44,6 +43,8 @@ object PageLinkLoader {
     val foldedLinks = filteredList.foldLeft(Map[String, Int]())((map, link : String) =>
       map + (link -> links.count(_.equals(link)))
     )
+
+    newVisited = newVisited.filter(s => !s.equals(url))
 
     if(newVisited.isEmpty){
       // return merged map
