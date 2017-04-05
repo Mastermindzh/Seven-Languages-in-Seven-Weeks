@@ -1,6 +1,7 @@
 import java.io.{File, PrintWriter}
 
 import scala.collection.immutable.ListMap
+import scala.collection.mutable.ListBuffer
 import scala.io.Source
 
 object PageLinkLoader {
@@ -16,6 +17,7 @@ object PageLinkLoader {
 
   // run through all links on a page and add them to a list
   def getLinks(url: String, urls : Map[String, Int], visited : List[String] = List[String]()) : Map[String, Int] = {
+
     val content = Source.fromURL(url)(io.Codec("ISO-8859-1")).mkString
     val links = hrefRegex.findAllIn(content).matchData.toList.map(_.group(2).toString)
 
@@ -24,23 +26,30 @@ object PageLinkLoader {
         l => l.startsWith("/") ||
         l.startsWith("#") ||
         l.startsWith(url) ||
-        (!l.startsWith("http://") &&  !l.startsWith("www."))
+      l.contains(url.replace(url.split("/").last, ""))
     )
+
+    // create new mutable list and fill with visited
+    val newVisited = scala.collection.mutable.ListBuffer.empty[String]
+    newVisited ++= visited.filter(p => !p.equals(url))
+
+    //add to newVisited
+    filteredList.foreach(s => {
+      if(!newVisited.contains(s)){
+        newVisited += s
+      }
+    })
 
     // convert list to map, count occurrences
     val foldedLinks = filteredList.foldLeft(Map[String, Int]())((map, link : String) =>
-      map + (clean(link,url) -> links.count(_.equals(link)))
+      map + (link -> links.count(_.equals(link)))
     )
 
-    // return merged map
-    mergeMap(List(urls, foldedLinks))((v1, v2) => v1 + v2)
-  }
-
-  def clean(link : String, url : String): String ={
-    if(!(link.startsWith("http://") || link.startsWith("www."))){
-       url + "/" + link
+    if(newVisited.isEmpty){
+      // return merged map
+      mergeMap(List(urls, foldedLinks))((v1, v2) => v1 + v2)
     }else{
-      link
+      getLinks(newVisited(0),mergeMap(List(urls, foldedLinks))((v1, v2) => v1 + v2), newVisited.toList)
     }
   }
 
